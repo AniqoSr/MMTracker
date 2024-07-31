@@ -1,16 +1,3 @@
-# Storage type can be 'sqlite', 'mysql', or 'yaml'
-storage:
-  type: 'yaml'
-
-# MySQL configuration
-mysql:
-  host: 'localhost'
-  port: 3306
-  database: 'your_database'
-  username: 'your_username'
-  password: 'your_password'
-
-# List of specific MythicMobs to track
 mythicmobs:
   specific_mobs:
     - name: 'HUSK'
