@@ -67,11 +67,21 @@ public class DatabaseHandler {
     }
 
     public Connection getConnection() {
-        openConnection(); // Ensure connection is open before returning
+        if (connection == null || !isConnectionValid()) {
+            openConnection();
+        }
         return connection;
     }
 
     public String getStorageType() {
         return dbType;
+    }
+
+    private boolean isConnectionValid() {
+        try {
+            return connection != null && !connection.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }

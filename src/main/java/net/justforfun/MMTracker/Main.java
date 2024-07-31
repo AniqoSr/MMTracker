@@ -7,9 +7,6 @@ import net.justforfun.MMTracker.storage.DatabaseHandler;
 import net.justforfun.MMTracker.listeners.DamageListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
-
 public class Main extends JavaPlugin {
     private DatabaseHandler databaseHandler;
 
