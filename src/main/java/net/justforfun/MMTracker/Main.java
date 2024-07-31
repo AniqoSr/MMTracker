@@ -59,7 +59,28 @@ public class Main extends JavaPlugin {
     }
 
     public void reloadConfigAndStorage() {
+        // Reload the configuration from the file
         reloadConfig();
-        setupStorage();
+
+        // Setup storage with the reloaded configuration
+        if (databaseHandler != null) {
+            databaseHandler.closeConnection();
+        }
+
+        String storageType = getConfig().getString("storage.type");
+        if (storageType.equalsIgnoreCase("sqlite")) {
+            databaseHandler = new DatabaseHandler("sqlite", getDataFolder() + "/.data/topdamage.db", null, null, null);
+        } else if (storageType.equalsIgnoreCase("mysql")) {
+            String mysqlUrl = "jdbc:mysql://" + getConfig().getString("mysql.host") + ":" +
+                    getConfig().getString("mysql.port") + "/" +
+                    getConfig().getString("mysql.database");
+            String mysqlUser = getConfig().getString("mysql.username");
+            String mysqlPassword = getConfig().getString("mysql.password");
+            databaseHandler = new DatabaseHandler("mysql", null, mysqlUrl, mysqlUser, mysqlPassword);
+        }
+
+        if (databaseHandler != null) {
+            databaseHandler.setupDatabase();
+        }
     }
 }

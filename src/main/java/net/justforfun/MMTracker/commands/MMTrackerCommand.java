@@ -1,12 +1,12 @@
 package net.justforfun.MMTracker.commands;
 
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import net.justforfun.MMTracker.storage.DatabaseHandler;
 import net.justforfun.MMTracker.Main;
+import net.justforfun.MMTracker.storage.DatabaseHandler;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,8 +32,7 @@ public class MMTrackerCommand implements CommandExecutor {
 
         switch (args[0].toLowerCase()) {
             case "reload":
-                plugin.reloadConfig();
-                plugin.setupStorage(); // Reinitialize storage based on new config
+                plugin.reloadConfigAndStorage(); // Reload config and storage
                 sender.sendMessage("Config and storage reloaded.");
                 break;
             case "reset":
