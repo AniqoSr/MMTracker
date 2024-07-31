@@ -1,0 +1,15 @@
+name: MMTracker
+version: '1.0'
+main: net.justforfun.MMTracker.Main
+api-version: '1.20'
+depend: [MythicMobs, PlaceholderAPI]
+commands:
+  mmtracker:
+    description: Main command for MMTopDamageTracker plugin
+    usage: /mmtracker <reload|reset>
+    aliases: [mmt]
+    permission: mmtrack.command
+permissions:
+  mmtrack.command:
+    description: Allows use of the /mmtracker command
+    default: true
