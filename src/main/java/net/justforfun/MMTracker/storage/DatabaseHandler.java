@@ -73,10 +73,6 @@ public class DatabaseHandler {
         return connection;
     }
 
-    public String getStorageType() {
-        return dbType;
-    }
-
     private boolean isConnectionValid() {
         try {
             return connection != null && !connection.isClosed();

@@ -3,67 +3,53 @@ package net.justforfun.MMTracker;
 import net.justforfun.MMTracker.commands.MMTrackerCommand;
 import net.justforfun.MMTracker.placeholders.TopDamagePlaceholders;
 import net.justforfun.MMTracker.commands.MMTrackerTabCompleter;
-import net.justforfun.MMTracker.storage.DatabaseHandler;
 import net.justforfun.MMTracker.listeners.DamageListener;
+import net.justforfun.MMTracker.configs.ConfigManager;
+import net.justforfun.MMTracker.storage.Database;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
-    private DatabaseHandler databaseHandler;
+    private Database database;
+    private ConfigManager configManager;
 
     @Override
     public void onEnable() {
-        saveDefaultConfig(); // Ensure the default config file is saved if it doesn't exist
-        setupStorage();
+        getLogger().info("Enabling MMTracker...");
+        configManager = new ConfigManager(this); // Initialize ConfigManager
+        database = new Database(configManager); // Initialize Database
+        getLogger().info("Database initialized: " + (database != null));
 
-        getServer().getPluginManager().registerEvents(new DamageListener(this, databaseHandler), this);
+        getServer().getPluginManager().registerEvents(new DamageListener(this, database), this);
 
         // Register the PlaceholderAPI expansion
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new TopDamagePlaceholders(this).register();
         }
 
-        getCommand("mmtracker").setExecutor(new MMTrackerCommand(this, databaseHandler));
+        getCommand("mmtracker").setExecutor(new MMTrackerCommand(this, database));
         getCommand("mmtracker").setTabCompleter(new MMTrackerTabCompleter());
     }
 
     @Override
     public void onDisable() {
-        if (databaseHandler != null) {
-            databaseHandler.closeConnection();
+        if (database != null) {
+            database.closeConnection();
         }
     }
 
-    public void setupStorage() {
-        if (databaseHandler != null) {
-            databaseHandler.closeConnection();
-        }
-
-        String storageType = getConfig().getString("storage.type");
-        if (storageType.equalsIgnoreCase("sqlite")) {
-            databaseHandler = new DatabaseHandler("sqlite", getDataFolder() + "/.data/topdamage.db", null, null, null);
-        } else if (storageType.equalsIgnoreCase("mysql")) {
-            String mysqlUrl = "jdbc:mysql://" + getConfig().getString("mysql.host") + ":" +
-                    getConfig().getString("mysql.port") + "/" +
-                    getConfig().getString("mysql.database");
-            String mysqlUser = getConfig().getString("mysql.username");
-            String mysqlPassword = getConfig().getString("mysql.password");
-            databaseHandler = new DatabaseHandler("mysql", null, mysqlUrl, mysqlUser, mysqlPassword);
-        }
-
-        if (databaseHandler != null) {
-            databaseHandler.setupDatabase();
-        }
+    public Database getDatabase() {
+        return database;
     }
 
-    public DatabaseHandler getDatabaseHandler() {
-        return databaseHandler;
+    public ConfigManager getConfigManager() {
+        return configManager;
     }
 
     public void reloadConfigAndStorage() {
-        // Reload the configuration from the file
-        reloadConfig();
+        // Reload the configuration from the ConfigManager
+        configManager.reloadConfig();
 
         // Setup storage with the reloaded configuration
-        setupStorage();
+        database = new Database(configManager);
     }
 }

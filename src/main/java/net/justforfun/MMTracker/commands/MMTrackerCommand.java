@@ -1,7 +1,8 @@
 package net.justforfun.MMTracker.commands;
 
+
+import net.justforfun.MMTracker.storage.Database;
 import net.justforfun.MMTracker.Main;
-import net.justforfun.MMTracker.storage.DatabaseHandler;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,11 +17,11 @@ import java.sql.SQLException;
 
 public class MMTrackerCommand implements CommandExecutor {
     private Main plugin;
-    private DatabaseHandler databaseHandler;
+    private Database database;
 
-    public MMTrackerCommand(Main plugin, DatabaseHandler databaseHandler) {
+    public MMTrackerCommand(Main plugin, Database database) {
         this.plugin = plugin;
-        this.databaseHandler = databaseHandler;
+        this.database = database;
     }
 
     @Override
@@ -52,7 +53,7 @@ public class MMTrackerCommand implements CommandExecutor {
     }
 
     private void resetTopDamage(String mobName) {
-        String storageType = plugin.getConfig().getString("storage.type");
+        String storageType = database.getStorageType();
         if (storageType.equalsIgnoreCase("yaml")) {
             resetTopDamageYaml(mobName);
         } else {
@@ -71,20 +72,17 @@ public class MMTrackerCommand implements CommandExecutor {
     }
 
     private void resetTopDamageDatabase(String mobName) {
-        databaseHandler.openConnection();
-        try (Connection conn = databaseHandler.getConnection();
+        try (Connection conn = database.getConnection();
              PreparedStatement stmt = conn.prepareStatement("DELETE FROM top_damage WHERE mob_name = ?")) {
             stmt.setString(1, mobName);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            databaseHandler.closeConnection();
         }
     }
 
     private void resetDeathCount(String mobName) {
-        String storageType = plugin.getConfig().getString("storage.type");
+        String storageType = database.getStorageType();
         if (storageType.equalsIgnoreCase("yaml")) {
             resetDeathCountYaml(mobName);
         } else {
@@ -103,15 +101,12 @@ public class MMTrackerCommand implements CommandExecutor {
     }
 
     private void resetDeathCountDatabase(String mobName) {
-        databaseHandler.openConnection();
-        try (Connection conn = databaseHandler.getConnection();
+        try (Connection conn = database.getConnection();
              PreparedStatement stmt = conn.prepareStatement("DELETE FROM mob_deaths WHERE mob_name = ?")) {
             stmt.setString(1, mobName);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            databaseHandler.closeConnection();
         }
     }
 }
