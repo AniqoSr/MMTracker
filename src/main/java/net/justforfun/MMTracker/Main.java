@@ -2,9 +2,9 @@ package net.justforfun.MMTracker;
 
 import net.justforfun.MMTracker.commands.MMTrackerCommand;
 import net.justforfun.MMTracker.configs.ConfigManager;
-import net.justforfun.MMTracker.placeholders.TopDamagePlaceholders;
 import net.justforfun.MMTracker.commands.MMTrackerTabCompleter;
 import net.justforfun.MMTracker.listeners.DamageListener;
+import net.justforfun.MMTracker.placeholders.TopDamagePlaceholders;
 import net.justforfun.MMTracker.storage.Database;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -14,6 +14,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class Main extends JavaPlugin {
+    private static Main instance;
     private Database database;
     private ConfigManager configManager;
     private FileConfiguration yamlConfig;
@@ -21,6 +22,7 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        instance = this;
         getLogger().info("Enabling MMTracker...");
         configManager = new ConfigManager(this); // Initialize ConfigManager
         setupYamlStorage();
@@ -31,15 +33,22 @@ public class Main extends JavaPlugin {
         // Register the PlaceholderAPI expansion
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new TopDamagePlaceholders(this).register();
+        } else {
+            getLogger().warning("PlaceholderAPI not found. Placeholders will not be parsed.");
         }
 
         getCommand("mmtracker").setExecutor(new MMTrackerCommand(this, database));
         getCommand("mmtracker").setTabCompleter(new MMTrackerTabCompleter(this));
+
+        getLogger().info("MMTracker has been enabled.");
     }
 
     @Override
     public void onDisable() {
-        saveYamlConfig();
+        if (yamlConfig != null) {
+            saveYamlConfig();
+        }
+        getLogger().info("MMTracker has been disabled.");
     }
 
     private void setupYamlStorage() {
@@ -53,8 +62,20 @@ public class Main extends JavaPlugin {
             }
         }
         yamlConfig = YamlConfiguration.loadConfiguration(yamlFile);
-        database = new Database(configManager, yamlConfig, yamlFile);
+        database = new Database(this, configManager, yamlConfig, yamlFile);
         getLogger().info("YAML storage setup complete.");
+    }
+
+    private void saveYamlConfig() {
+        try {
+            yamlConfig.save(yamlFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Main getInstance() {
+        return instance;
     }
 
     public Database getDatabase() {
@@ -71,13 +92,5 @@ public class Main extends JavaPlugin {
 
         // Reload YAML storage
         setupYamlStorage();
-    }
-
-    private void saveYamlConfig() {
-        try {
-            yamlConfig.save(yamlFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

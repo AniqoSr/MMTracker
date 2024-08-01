@@ -1,3 +1,4 @@
+debug: true
 mythicmobs:
   specific_mobs:
     - name: 'HUSK'

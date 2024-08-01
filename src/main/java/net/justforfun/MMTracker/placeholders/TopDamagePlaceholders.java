@@ -6,15 +6,17 @@ import net.justforfun.MMTracker.Main;
 import net.justforfun.MMTracker.utils.PlaceholderAPIUtil;
 
 public class TopDamagePlaceholders extends PlaceholderExpansion {
-    private PlaceholderAPIUtil placeholderAPIUtil;
+    private final Main plugin;
+    private final PlaceholderAPIUtil placeholderAPIUtil;
 
     public TopDamagePlaceholders(Main plugin) {
+        this.plugin = plugin;
         this.placeholderAPIUtil = new PlaceholderAPIUtil(plugin);
     }
 
     @Override
     public String getIdentifier() {
-        return "mmtrack";
+        return "mmtracker";
     }
 
     @Override
@@ -39,6 +41,9 @@ public class TopDamagePlaceholders extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
-        return placeholderAPIUtil.parsePlaceholder(player, identifier);
+        if (player == null) {
+            return "";
+        }
+        return placeholderAPIUtil.getPlaceholderValue(player, identifier);
     }
 }

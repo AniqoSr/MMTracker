@@ -6,15 +6,23 @@ import net.justforfun.MMTracker.Main;
 
 public class PlaceholderAPIUtil {
 
+    private static PlaceholderAPIUtil instance;
     private final Main plugin;
     private final FileConfiguration yamlConfig;
+    private final boolean debug;
 
     public PlaceholderAPIUtil(Main plugin) {
         this.plugin = plugin;
         this.yamlConfig = plugin.getDatabase().getYamlConfig();
+        this.debug = plugin.getConfigManager().isDebug();
+        instance = this;
     }
 
-    public String parsePlaceholder(Player player, String identifier) {
+    public static PlaceholderAPIUtil getInstance() {
+        return instance;
+    }
+
+    public String getPlaceholderValue(Player player, String identifier) {
         if (identifier == null || identifier.isEmpty()) {
             return "None";
         }
@@ -34,31 +42,42 @@ public class PlaceholderAPIUtil {
             return "None";
         }
 
+        if (debug) {
+            plugin.getLogger().info("Parsing placeholder: type=" + type + ", mobName=" + mobName + ", rank=" + rank);
+        }
+
         if ("topname".equalsIgnoreCase(type)) {
-            return getTopNameFromYaml(mobName, rank);
+            String topName = getTopNameFromYaml(mobName, rank);
+            if (debug) {
+                plugin.getLogger().info("Parsed top name: " + topName);
+            }
+            return topName;
         } else if ("topdamage".equalsIgnoreCase(type)) {
-            return String.valueOf(getTopDamageFromYaml(mobName, rank));
+            int topDamage = getTopDamageFromYaml(mobName, rank);
+            if (debug) {
+                plugin.getLogger().info("Parsed top damage: " + topDamage);
+            }
+            return String.valueOf(topDamage);
         }
 
         return "None";
     }
 
     private String getTopNameFromYaml(String mobName, int rank) {
-        if (!yamlConfig.contains(mobName)) return "None";
-        return yamlConfig.getConfigurationSection(mobName).getKeys(false).stream()
-                .sorted((p1, p2) -> Integer.compare(yamlConfig.getInt(mobName + "." + p2), yamlConfig.getInt(mobName + "." + p1)))
-                .skip(rank - 1)
-                .findFirst()
-                .orElse("None");
+        String key = rank + ".Name";
+        String name = yamlConfig.getString(mobName + "." + key, "None");
+        if (debug) {
+            plugin.getLogger().info("Fetching top name for " + mobName + " rank " + rank + ": " + name);
+        }
+        return name;
     }
 
     private int getTopDamageFromYaml(String mobName, int rank) {
-        if (!yamlConfig.contains(mobName)) return 0;
-        return yamlConfig.getConfigurationSection(mobName).getKeys(false).stream()
-                .sorted((p1, p2) -> Integer.compare(yamlConfig.getInt(mobName + "." + p2), yamlConfig.getInt(mobName + "." + p1)))
-                .skip(rank - 1)
-                .findFirst()
-                .map(p -> yamlConfig.getInt(mobName + "." + p))
-                .orElse(0);
+        String key = rank + ".Damage";
+        int damage = yamlConfig.getInt(mobName + "." + key, 0);
+        if (debug) {
+            plugin.getLogger().info("Fetching top damage for " + mobName + " rank " + rank + ": " + damage);
+        }
+        return damage;
     }
 }

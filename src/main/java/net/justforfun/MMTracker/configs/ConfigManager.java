@@ -1,47 +1,32 @@
 package net.justforfun.MMTracker.configs;
 
+import net.justforfun.MMTracker.Main;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
-import java.io.IOException;
 
 public class ConfigManager {
-    private final JavaPlugin plugin;
+    private final Main plugin;
     private FileConfiguration config;
-    private File configFile;
 
-    public ConfigManager(JavaPlugin plugin) {
+    public ConfigManager(Main plugin) {
         this.plugin = plugin;
-        setupConfig();
+        loadConfig();
     }
 
-    private void setupConfig() {
-        configFile = new File(plugin.getDataFolder(), "config.yml");
-        if (!configFile.exists()) {
-            plugin.saveResource("config.yml", false);
-        }
-        config = YamlConfiguration.loadConfiguration(configFile);
+    public void loadConfig() {
+        plugin.saveDefaultConfig();
+        this.config = plugin.getConfig();
     }
 
     public FileConfiguration getConfig() {
         return config;
     }
 
+    public boolean isDebug() {
+        return config.getBoolean("debug", false);
+    }
+
     public void reloadConfig() {
-        config = YamlConfiguration.loadConfiguration(configFile);
-    }
-
-    public void saveConfig() {
-        try {
-            config.save(configFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public JavaPlugin getPlugin() {
-        return plugin;
+        plugin.reloadConfig();
+        this.config = plugin.getConfig();
     }
 }
