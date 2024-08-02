@@ -1,17 +1,17 @@
 package net.justforfun.MMTracker;
 
-import net.justforfun.MMTracker.commands.MMTrackerCommand;
-import net.justforfun.MMTracker.configs.ConfigManager;
-import net.justforfun.MMTracker.commands.MMTrackerTabCompleter;
-import net.justforfun.MMTracker.listeners.DamageListener;
-import net.justforfun.MMTracker.placeholders.TopDamagePlaceholders;
-import net.justforfun.MMTracker.storage.Database;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.io.File;
 import java.io.IOException;
+import net.justforfun.MMTracker.commands.MMTrackerCommand;
+import net.justforfun.MMTracker.commands.MMTrackerTabCompleter;
+import net.justforfun.MMTracker.configs.ConfigManager;
+import net.justforfun.MMTracker.listeners.DamageListener;
+import net.justforfun.MMTracker.placeholders.MMTrackerPlaceholder;
+import net.justforfun.MMTracker.storage.Database;
+import net.justforfun.MMTracker.tasks.SchedulerTask;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
     private static Main instance;
@@ -20,55 +20,54 @@ public class Main extends JavaPlugin {
     private FileConfiguration yamlConfig;
     private File yamlFile;
 
-    @Override
     public void onEnable() {
         instance = this;
-        getLogger().info("Enabling MMTracker...");
-        configManager = new ConfigManager(this); // Initialize ConfigManager
-        setupYamlStorage();
-        getLogger().info("YAML storage initialized: " + (database != null));
-
-        getServer().getPluginManager().registerEvents(new DamageListener(this, database), this);
-
-        // Register the PlaceholderAPI expansion
-        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new TopDamagePlaceholders(this).register();
+        this.getLogger().info("Enabling MMTracker...");
+        this.configManager = new ConfigManager(this);
+        this.setupYamlStorage();
+        this.getLogger().info("YAML storage initialized: " + (this.database != null));
+        this.getServer().getPluginManager().registerEvents(new DamageListener(this, this.database), this);
+        if (this.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            MMTrackerPlaceholder placeholder = new MMTrackerPlaceholder(this);
+            placeholder.register();
+            this.getLogger().info("PlaceholderAPI found and MMTrackerPlaceholder registered.");
         } else {
-            getLogger().warning("PlaceholderAPI not found. Placeholders will not be parsed.");
+            this.getLogger().warning("PlaceholderAPI not found. Placeholders will not be parsed.");
         }
+        this.getCommand("mmtracker").setExecutor(new MMTrackerCommand(this, this.database));
+        this.getCommand("mmtracker").setTabCompleter(new MMTrackerTabCompleter(this));
 
-        getCommand("mmtracker").setExecutor(new MMTrackerCommand(this, database));
-        getCommand("mmtracker").setTabCompleter(new MMTrackerTabCompleter(this));
+        // Schedule the reset tasks
+        new SchedulerTask(this).runTaskTimer(this, 0L, 20L * 60); // runs every minute
 
-        getLogger().info("MMTracker has been enabled.");
+        this.getLogger().info("MMTracker has been enabled.");
     }
 
-    @Override
     public void onDisable() {
-        if (yamlConfig != null) {
-            saveYamlConfig();
+        if (this.yamlConfig != null) {
+            this.saveYamlConfig();
         }
-        getLogger().info("MMTracker has been disabled.");
+        this.getLogger().info("MMTracker has been disabled.");
     }
 
     private void setupYamlStorage() {
-        yamlFile = new File(getDataFolder(), ".data/topdamage.yml");
-        if (!yamlFile.exists()) {
-            yamlFile.getParentFile().mkdirs();
+        this.yamlFile = new File(this.getDataFolder(), ".data/topdamage.yml");
+        if (!this.yamlFile.exists()) {
+            this.yamlFile.getParentFile().mkdirs();
             try {
-                yamlFile.createNewFile();
+                this.yamlFile.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        yamlConfig = YamlConfiguration.loadConfiguration(yamlFile);
-        database = new Database(this, configManager, yamlConfig, yamlFile);
-        getLogger().info("YAML storage setup complete.");
+        this.yamlConfig = YamlConfiguration.loadConfiguration(this.yamlFile);
+        this.database = new Database(this, this.configManager, this.yamlConfig, this.yamlFile);
+        this.getLogger().info("YAML storage setup complete.");
     }
 
     private void saveYamlConfig() {
         try {
-            yamlConfig.save(yamlFile);
+            this.yamlConfig.save(this.yamlFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -79,18 +78,15 @@ public class Main extends JavaPlugin {
     }
 
     public Database getDatabase() {
-        return database;
+        return this.database;
     }
 
     public ConfigManager getConfigManager() {
-        return configManager;
+        return this.configManager;
     }
 
     public void reloadConfigAndStorage() {
-        // Reload the configuration from the ConfigManager
-        configManager.reloadConfig();
-
-        // Reload YAML storage
-        setupYamlStorage();
+        this.configManager.reloadConfig();
+        this.setupYamlStorage();
     }
 }

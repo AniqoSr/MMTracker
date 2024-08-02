@@ -1,7 +1,54 @@
-debug: true
+debug: false
+
+language: 'en' # 'id' for Indonesian, 'en' for English
+
 mythicmobs:
-  specific_mobs:
-    - name: 'HUSK'
-      max_deaths: 1
-    - name: 'SkeletalKnight'
-      max_deaths: 2
+  spesifik_mob:
+    - id: 'SkeletonWarrior'
+      nama_mobs:
+        1: 'SkeletonKing'
+        2: 'SkeletonMinion'
+      maks:
+        1: '1'
+        2: '2'
+    - id: 'SkeletalKnight'
+      nama_mob:
+        1: 'SkeletalKnight'
+      mak:
+        1: false
+    - id: 'Zombies'
+      nama_mobs:
+        1: 'HUSK'
+        2: 'Zombie'
+      maks:
+        1: false
+        2: '3'
+
+jadwal-reset:
+  reset1:
+    enabled: true
+    id: 'SkeletonWarrior'
+    hari: 'senin'
+    waktu: '00:00'
+    s-m-h: 'false'
+    interval: 'mingguan'
+    respawn: 'true'
+    loc: 'world:100,64,100'
+  reset2:
+    enabled: true
+    id: 'SkeletalKnight'
+    hari: 'false'
+    waktu: 'false'
+    s-m-h: '500s'
+    interval: 'detik'
+    respawn: 'true'
+    loc: 'world:100,64,100'
+  reset3:
+    enabled: true
+    id: 'Zombies'
+    hari: 'minggu'
+    waktu: '23:59'
+    s-m-h: 'false'
+    interval: 'bulanan'
+    respawn: 'false'
+    loc: 'none'

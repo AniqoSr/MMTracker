@@ -1,12 +1,15 @@
 package net.justforfun.MMTracker.storage;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.justforfun.MMTracker.Main;
 import net.justforfun.MMTracker.configs.ConfigManager;
 import org.bukkit.configuration.file.FileConfiguration;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 
 public class Database {
     private final Main plugin;
@@ -28,54 +31,103 @@ public class Database {
     }
 
     public FileConfiguration getYamlConfig() {
-        return yamlConfig;
+        return this.yamlConfig;
     }
 
     public int getDeathCount(String mobName) {
-        return yamlConfig.getInt("deaths." + mobName, 0);
+        return this.yamlConfig.getInt("id." + mobName + ".deaths", 0);
     }
 
     public void increaseDeathCount(String mobName) {
-        int currentDeathCount = yamlConfig.getInt("deaths." + mobName, 0);
-        yamlConfig.set("deaths." + mobName, currentDeathCount + 1);
-        if (debug) {
-            plugin.getLogger().info("Death count increased for " + mobName + " to " + (currentDeathCount + 1));
+        int currentDeathCount = this.yamlConfig.getInt("id." + mobName + ".deaths", 0);
+        int maxDeaths = this.configManager.getMaxDeaths(mobName);
+        if (maxDeaths != -1 && currentDeathCount >= maxDeaths) {
+            if (this.debug) {
+                this.plugin.getLogger().info("Max deaths reached for " + mobName + ". No more updates.");
+            }
+            return;
         }
-        saveYamlConfig();
+        this.yamlConfig.set("id." + mobName + ".deaths", currentDeathCount + 1);
+        if (this.debug) {
+            this.plugin.getLogger().info("Death count increased for " + mobName + " to " + (currentDeathCount + 1));
+        }
+        this.saveYamlConfig();
     }
 
     public void updateStorage(String mobName, String playerName, int damage) {
-        // Get current damage for the player
-        Map<String, Integer> playerDamageMap = new HashMap<>();
-        if (yamlConfig.contains(mobName)) {
-            for (String key : yamlConfig.getConfigurationSection(mobName).getKeys(false)) {
-                String name = yamlConfig.getString(mobName + "." + key + ".Name");
-                int dmg = yamlConfig.getInt(mobName + "." + key + ".Damage");
-                playerDamageMap.put(name, playerDamageMap.getOrDefault(name, 0) + dmg);
+        int currentDeathCount = this.yamlConfig.getInt("id." + mobName + ".deaths", 0);
+        int maxDeaths = this.configManager.getMaxDeaths(mobName);
+        if (maxDeaths != -1 && currentDeathCount >= maxDeaths) {
+            if (this.debug) {
+                this.plugin.getLogger().info("Max deaths reached for " + mobName + ". No more updates.");
+            }
+            return;
+        }
+
+        // Update individual mob damage
+        String path = "id." + mobName + ".mobs." + mobName + ".players";
+        HashMap<String, Integer> playerDamageMap = new HashMap<>();
+        if (this.yamlConfig.contains(path)) {
+            for (String key : this.yamlConfig.getConfigurationSection(path).getKeys(false)) {
+                String name = this.yamlConfig.getString(path + "." + key + ".Name");
+                int dmg = this.yamlConfig.getInt(path + "." + key + ".Damage");
+                playerDamageMap.put(name, dmg);
             }
         }
-        // Update damage
         playerDamageMap.put(playerName, playerDamageMap.getOrDefault(playerName, 0) + damage);
-
-        // Save back to yamlConfig
         int rank = 1;
-        for (Map.Entry<String, Integer> entry : sortByValue(playerDamageMap).entrySet()) {
-            yamlConfig.set(mobName + "." + rank + ".Name", entry.getKey());
-            yamlConfig.set(mobName + "." + rank + ".Damage", entry.getValue());
+        for (Map.Entry<String, Integer> entry : Database.sortByValue(playerDamageMap).entrySet()) {
+            this.yamlConfig.set(path + "." + rank + ".Name", entry.getKey());
+            this.yamlConfig.set(path + "." + rank + ".Damage", entry.getValue());
             rank++;
         }
 
-        if (debug) {
-            plugin.getLogger().info("Updated damage for player=" + playerName + ", mobName=" + mobName + ", damage=" + damage);
+        // Update total damage
+        path = "id." + mobName + ".totaldamage.players";
+        playerDamageMap.clear();
+        if (this.yamlConfig.contains(path)) {
+            for (String key : this.yamlConfig.getConfigurationSection(path).getKeys(false)) {
+                String name = this.yamlConfig.getString(path + "." + key + ".Name");
+                int dmg = this.yamlConfig.getInt(path + "." + key + ".Damage");
+                playerDamageMap.put(name, dmg);
+            }
         }
-        saveYamlConfig();
+        playerDamageMap.put(playerName, playerDamageMap.getOrDefault(playerName, 0) + damage);
+        rank = 1;
+        for (Map.Entry<String, Integer> entry : Database.sortByValue(playerDamageMap).entrySet()) {
+            this.yamlConfig.set(path + "." + rank + ".Name", entry.getKey());
+            this.yamlConfig.set(path + "." + rank + ".Damage", entry.getValue());
+            rank++;
+        }
+
+        if (this.debug) {
+            this.plugin.getLogger().info("Updated damage for player=" + playerName + ", mobName=" + mobName + ", damage=" + damage);
+        }
+        this.saveYamlConfig();
+    }
+
+    public void resetTopDamageForMob(String mobName) {
+        this.yamlConfig.set("id." + mobName + ".mobs." + mobName + ".players", null);
+        this.yamlConfig.set("id." + mobName + ".totaldamage.players", null);
+        if (this.debug) {
+            this.plugin.getLogger().info("Top damage reset for mob: " + mobName);
+        }
+        this.saveYamlConfig();
+    }
+
+    public void resetDeathCountForMob(String mobName) {
+        this.yamlConfig.set("id." + mobName + ".deaths", null);
+        if (this.debug) {
+            this.plugin.getLogger().info("Death count reset for mob: " + mobName);
+        }
+        this.saveYamlConfig();
     }
 
     private void saveYamlConfig() {
         try {
-            yamlConfig.save(yamlFile);
-            if (debug) {
-                plugin.getLogger().info("YAML configuration saved.");
+            this.yamlConfig.save(this.yamlFile);
+            if (this.debug) {
+                this.plugin.getLogger().info("YAML configuration saved.");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -83,9 +135,9 @@ public class Database {
     }
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-        List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
+        ArrayList<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
         list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
-        Map<K, V> result = new LinkedHashMap<>();
+        LinkedHashMap<K, V> result = new LinkedHashMap<>();
         for (Map.Entry<K, V> entry : list) {
             result.put(entry.getKey(), entry.getValue());
         }

@@ -1,15 +1,14 @@
 package net.justforfun.MMTracker.commands;
 
-import net.justforfun.MMTracker.storage.Database;
+import java.io.File;
+import java.io.IOException;
 import net.justforfun.MMTracker.Main;
+import net.justforfun.MMTracker.storage.Database;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.io.File;
-import java.io.IOException;
+import org.bukkit.entity.Player;
 
 public class MMTrackerCommand implements CommandExecutor {
     private final Main plugin;
@@ -20,49 +19,53 @@ public class MMTrackerCommand implements CommandExecutor {
         this.database = database;
     }
 
-    @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player) || !sender.hasPermission("mmtracker.use")) {
+            sender.sendMessage("You do not have permission to use this command.");
+            return true;
+        }
         if (args.length == 0) {
             sender.sendMessage("/mmtracker <reload|reset>");
             return true;
         }
-
         switch (args[0].toLowerCase()) {
-            case "reload":
-                plugin.reloadConfigAndStorage(); // Reload config and storage
+            case "reload": {
+                this.plugin.reloadConfigAndStorage();
                 sender.sendMessage("Config and storage reloaded.");
                 break;
-            case "reset":
+            }
+            case "reset": {
                 if (args.length < 2) {
-                    sender.sendMessage("Please specify the mob name.");
+                    sender.sendMessage("Please specify the id.");
                     return true;
                 }
-                resetTopDamage(args[1]);
-                resetDeathCount(args[1]);
+                this.resetTopDamage(args[1]);
+                this.resetDeathCount(args[1]);
                 sender.sendMessage("Top damage and death count for " + args[1] + " reset.");
                 break;
-            default:
+            }
+            default: {
                 sender.sendMessage("/mmtracker <reload|reset>");
-                break;
+            }
         }
         return true;
     }
 
-    private void resetTopDamage(String mobName) {
-        FileConfiguration yamlConfig = database.getYamlConfig();
-        yamlConfig.set(mobName, null);
+    private void resetTopDamage(String id) {
+        FileConfiguration yamlConfig = this.database.getYamlConfig();
+        yamlConfig.set(id, null);
         try {
-            yamlConfig.save(new File(plugin.getDataFolder(), ".data/topdamage.yml"));
+            yamlConfig.save(new File(this.plugin.getDataFolder(), ".data/topdamage.yml"));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void resetDeathCount(String mobName) {
-        FileConfiguration yamlConfig = database.getYamlConfig();
-        yamlConfig.set("deaths." + mobName, 0);
+    private void resetDeathCount(String id) {
+        FileConfiguration yamlConfig = this.database.getYamlConfig();
+        yamlConfig.set("deaths." + id, 0);
         try {
-            yamlConfig.save(new File(plugin.getDataFolder(), ".data/topdamage.yml"));
+            yamlConfig.save(new File(this.plugin.getDataFolder(), ".data/topdamage.yml"));
         } catch (IOException e) {
             e.printStackTrace();
         }
