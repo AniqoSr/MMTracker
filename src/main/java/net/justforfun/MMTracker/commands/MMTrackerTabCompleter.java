@@ -8,6 +8,7 @@ import net.justforfun.MMTracker.Main;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.ConfigurationSection;
 
 public class MMTrackerTabCompleter implements TabCompleter {
     private final Main plugin;
@@ -16,6 +17,7 @@ public class MMTrackerTabCompleter implements TabCompleter {
         this.plugin = plugin;
     }
 
+    @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             return Arrays.asList("reload", "reset");
@@ -28,9 +30,9 @@ public class MMTrackerTabCompleter implements TabCompleter {
 
     private List<String> getMobIdsFromConfig() {
         List<String> mobIds = new ArrayList<>();
-        List<Map<?, ?>> mobs = this.plugin.getConfigManager().getConfig().getMapList("mythicmobs.spesifik_mob");
-        for (Map<?, ?> mob : mobs) {
-            mobIds.add((String) mob.get("id"));
+        ConfigurationSection section = this.plugin.getConfigManager().getConfig().getConfigurationSection("mythicmobs.spesifik_mob");
+        if (section != null) {
+            mobIds.addAll(section.getKeys(false));
         }
         return mobIds;
     }

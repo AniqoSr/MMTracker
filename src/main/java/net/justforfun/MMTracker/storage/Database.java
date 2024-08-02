@@ -97,22 +97,23 @@ public class Database {
     }
 
     public void resetTopDamageForMob(String mobId) {
-        this.yamlConfig.set("id." + mobId, null);
+        ConfigurationSection mobSection = this.yamlConfig.getConfigurationSection("id." + mobId + ".mobs");
+        if (mobSection != null) {
+            for (String mobName : mobSection.getKeys(false)) {
+                this.yamlConfig.set("id." + mobId + ".mobs." + mobName, null);
+            }
+        }
+        this.yamlConfig.set("id." + mobId + ".totaldamage", null);
         if (this.debug) {
             this.plugin.getLogger().info("Top damage reset for mob: " + mobId);
         }
         this.saveYamlConfig();
     }
 
-    public void resetDeathCountForMob(String mobId) {
-        ConfigurationSection mobSection = this.yamlConfig.getConfigurationSection("id." + mobId + ".mobs");
-        if (mobSection != null) {
-            for (String mobName : mobSection.getKeys(false)) {
-                this.yamlConfig.set("id." + mobId + ".mobs." + mobName + ".deaths", null);
-            }
-        }
+    public void resetDeathCountForMob(String mobId, String mobName) {
+        this.yamlConfig.set("id." + mobId + ".mobs." + mobName + ".deaths", 0);
         if (this.debug) {
-            this.plugin.getLogger().info("Death count reset for all mobs in: " + mobId);
+            this.plugin.getLogger().info("Death count reset for mob: " + mobName + " in " + mobId);
         }
         this.saveYamlConfig();
     }
@@ -127,6 +128,7 @@ public class Database {
             e.printStackTrace();
         }
     }
+
 
     private static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
         List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());

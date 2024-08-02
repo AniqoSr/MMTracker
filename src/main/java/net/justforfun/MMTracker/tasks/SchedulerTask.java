@@ -8,7 +8,6 @@ import io.lumine.mythic.core.mobs.ActiveMob;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -63,18 +62,17 @@ public class SchedulerTask extends BukkitRunnable {
 
     private LocalDateTime calculateNextReset(ConfigManager.ResetSchedule schedule, LocalDateTime now) {
         LocalDateTime nextReset = now;
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         switch (schedule.getInterval().toLowerCase()) {
             case "harian":
-                nextReset = now.with(LocalTime.parse(schedule.getTime().toString(), timeFormatter)).plusDays(1L);
+                nextReset = now.with(schedule.getTime()).plusDays(1L);
                 break;
             case "mingguan":
                 DayOfWeek dayOfWeek = schedule.getDayOfWeek();
-                nextReset = now.with(TemporalAdjusters.nextOrSame(dayOfWeek)).with(LocalTime.parse(schedule.getTime().toString(), timeFormatter)).plusWeeks(1L);
+                nextReset = now.with(TemporalAdjusters.nextOrSame(dayOfWeek)).with(schedule.getTime()).plusWeeks(1L);
                 break;
             case "bulanan":
-                nextReset = now.with(LocalTime.parse(schedule.getTime().toString(), timeFormatter)).plusMonths(1L);
+                nextReset = now.with(schedule.getTime()).plusMonths(1L);
                 break;
             case "detik":
                 nextReset = now.plusSeconds(this.parseSMH(schedule.getSmh()));
@@ -104,17 +102,27 @@ public class SchedulerTask extends BukkitRunnable {
     }
 
     private void resetMobData(ConfigManager.ResetSchedule schedule) {
-        String mobName = schedule.getType().equals("id") ? schedule.getId() : schedule.getMob();
-        Bukkit.getLogger().info("Resetting MMTracker data for mob: " + mobName);
-        this.plugin.getDatabase().resetTopDamageForMob(mobName);
-        this.plugin.getDatabase().resetDeathCountForMob(mobName);
+        String mobId = schedule.getId();
+        Bukkit.getLogger().info("Resetting MMTracker data for id: " + mobId);
+
+        if (schedule.getType().equals("id")) {
+            this.plugin.getDatabase().resetTopDamageForMob(mobId);
+
+            for (String mobName : this.configManager.getMobNames(mobId)) {
+                this.plugin.getDatabase().resetDeathCountForMob(mobId, mobName);
+            }
+        } else {
+            String mobName = schedule.getMob();
+            this.plugin.getDatabase().resetTopDamageForMob(mobName);
+            this.plugin.getDatabase().resetDeathCountForMob(mobId, mobName);
+        }
 
         if (schedule.isRespawn() && !schedule.getLoc().equals("none")) {
             String[] locParts = schedule.getLoc().split(":");
             String worldName = locParts[0];
             String[] coords = locParts[1].split(",");
             Location loc = new Location(Bukkit.getWorld(worldName), Double.parseDouble(coords[0]), Double.parseDouble(coords[1]), Double.parseDouble(coords[2]));
-            this.respawnMob(mobName, loc);
+            this.respawnMob(schedule.getType().equals("id") ? mobId : schedule.getMob(), loc);
         }
     }
 

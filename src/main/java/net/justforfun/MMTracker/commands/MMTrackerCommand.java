@@ -40,7 +40,6 @@ public class MMTrackerCommand implements CommandExecutor {
                     return true;
                 }
                 this.resetTopDamage(args[1]);
-                this.resetDeathCount(args[1]);
                 sender.sendMessage("Top damage and death count for " + args[1] + " reset.");
                 break;
             }
@@ -52,22 +51,9 @@ public class MMTrackerCommand implements CommandExecutor {
     }
 
     private void resetTopDamage(String id) {
-        FileConfiguration yamlConfig = this.database.getYamlConfig();
-        yamlConfig.set(id, null);
-        try {
-            yamlConfig.save(new File(this.plugin.getDataFolder(), ".data/topdamage.yml"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void resetDeathCount(String id) {
-        FileConfiguration yamlConfig = this.database.getYamlConfig();
-        yamlConfig.set("deaths." + id, 0);
-        try {
-            yamlConfig.save(new File(this.plugin.getDataFolder(), ".data/topdamage.yml"));
-        } catch (IOException e) {
-            e.printStackTrace();
+        this.database.resetTopDamageForMob(id);
+        for (String mobName : this.plugin.getConfigManager().getMobNames(id)) {
+            this.database.resetDeathCountForMob(id, mobName);
         }
     }
 }

@@ -53,12 +53,16 @@ public class DamageListener implements Listener {
         if (this.debug) {
             this.plugin.getLogger().info("EntityDamageByEntityEvent: player=" + player.getName() + ", mobName=" + mobName + ", damage=" + damage);
         }
-        if (maxDeaths == -1 || this.database.getDeathCount(mobId, mobName) >= maxDeaths) {
-            return;
-        }
+
+        // Store the damage regardless of the maxDeaths value
         this.database.updateStorage(mobId, mobName, player.getName(), (int) Math.round(damage));
         if (this.debug) {
             this.plugin.getLogger().info("Updated damage for player=" + player.getName() + ", mobName=" + mobName + ", damage=" + damage);
+        }
+
+        // Check maxDeaths for death handling
+        if (maxDeaths != -1 && this.database.getDeathCount(mobId, mobName) >= maxDeaths) {
+            return;
         }
     }
 
