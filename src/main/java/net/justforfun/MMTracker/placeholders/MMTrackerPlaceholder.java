@@ -3,6 +3,7 @@ package net.justforfun.MMTracker.placeholders;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.justforfun.MMTracker.Main;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 
@@ -103,8 +104,17 @@ public class MMTrackerPlaceholder extends PlaceholderExpansion {
     }
 
     private String findMobId(String mobName) {
-        for (String id : this.yamlConfig.getConfigurationSection("id").getKeys(false)) {
-            if (this.yamlConfig.contains("id." + id + ".mobs." + mobName)) {
+        ConfigurationSection idSection = this.yamlConfig.getConfigurationSection("id");
+        if (idSection == null) {
+            if (this.debug) {
+                this.plugin.getLogger().warning("No 'id' section found in the configuration.");
+            }
+            return "None";
+        }
+
+        for (String id : idSection.getKeys(false)) {
+            ConfigurationSection mobsSection = idSection.getConfigurationSection(id + ".mobs");
+            if (mobsSection != null && mobsSection.contains(mobName)) {
                 return id;
             }
         }

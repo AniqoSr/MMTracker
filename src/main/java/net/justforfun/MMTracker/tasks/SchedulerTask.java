@@ -43,7 +43,7 @@ public class SchedulerTask extends BukkitRunnable {
             Map.Entry<String, LocalDateTime> entry = iterator.next();
             if (now.isAfter(entry.getValue())) {
                 ConfigManager.ResetSchedule schedule = this.configManager.getResetSchedules().stream()
-                        .filter(s -> s.getType().equals("id") ? s.getId().equals(entry.getKey()) : s.getMob().equals(entry.getKey()))
+                        .filter(s -> s.getId().equals(entry.getKey()) || s.getMob().equals(entry.getKey()))
                         .findFirst()
                         .orElse(null);
                 if (schedule != null) {
@@ -56,8 +56,8 @@ public class SchedulerTask extends BukkitRunnable {
 
     private void loadResetTimes() {
         for (ConfigManager.ResetSchedule schedule : this.configManager.getResetSchedules()) {
-            String key = schedule.getType().equals("id") ? schedule.getId() : schedule.getMob();
-            this.nextResetTimes.put(key, this.calculateNextReset(schedule, LocalDateTime.now()));
+            this.nextResetTimes.put(schedule.getId().isEmpty() ? schedule.getMob() : schedule.getId(),
+                    this.calculateNextReset(schedule, LocalDateTime.now()));
         }
     }
 
@@ -67,23 +67,14 @@ public class SchedulerTask extends BukkitRunnable {
 
         switch (schedule.getInterval().toLowerCase()) {
             case "harian":
-                nextReset = now.with(LocalTime.parse(schedule.getTime().toString(), timeFormatter));
-                if (nextReset.isBefore(now)) {
-                    nextReset = nextReset.plusDays(1);
-                }
+                nextReset = now.with(LocalTime.parse(schedule.getTime().toString(), timeFormatter)).plusDays(1L);
                 break;
             case "mingguan":
                 DayOfWeek dayOfWeek = schedule.getDayOfWeek();
-                nextReset = now.with(TemporalAdjusters.nextOrSame(dayOfWeek)).with(LocalTime.parse(schedule.getTime().toString(), timeFormatter));
-                if (nextReset.isBefore(now)) {
-                    nextReset = nextReset.plusWeeks(1);
-                }
+                nextReset = now.with(TemporalAdjusters.nextOrSame(dayOfWeek)).with(LocalTime.parse(schedule.getTime().toString(), timeFormatter)).plusWeeks(1L);
                 break;
             case "bulanan":
-                nextReset = now.with(LocalTime.parse(schedule.getTime().toString(), timeFormatter));
-                if (nextReset.isBefore(now)) {
-                    nextReset = nextReset.plusMonths(1);
-                }
+                nextReset = now.with(LocalTime.parse(schedule.getTime().toString(), timeFormatter)).plusMonths(1L);
                 break;
             case "detik":
                 nextReset = now.plusSeconds(this.parseSMH(schedule.getSmh()));
@@ -113,27 +104,17 @@ public class SchedulerTask extends BukkitRunnable {
     }
 
     private void resetMobData(ConfigManager.ResetSchedule schedule) {
-        String mobId = schedule.getId();
-        Bukkit.getLogger().info("Resetting MMTracker data for id: " + mobId);
-
-        if (schedule.getType().equals("id")) {
-            this.plugin.getDatabase().resetTopDamageForMob(mobId);
-
-            for (String mobName : this.configManager.getMobNames(mobId)) {
-                this.plugin.getDatabase().resetDeathCountForMob(mobId, mobName);
-            }
-        } else {
-            String mobName = schedule.getMob();
-            this.plugin.getDatabase().resetTopDamageForMob(mobName);
-            this.plugin.getDatabase().resetDeathCountForMob(mobId, mobName);
-        }
+        String mobName = schedule.getType().equals("id") ? schedule.getId() : schedule.getMob();
+        Bukkit.getLogger().info("Resetting MMTracker data for mob: " + mobName);
+        this.plugin.getDatabase().resetTopDamageForMob(mobName);
+        this.plugin.getDatabase().resetDeathCountForMob(mobName);
 
         if (schedule.isRespawn() && !schedule.getLoc().equals("none")) {
             String[] locParts = schedule.getLoc().split(":");
             String worldName = locParts[0];
             String[] coords = locParts[1].split(",");
             Location loc = new Location(Bukkit.getWorld(worldName), Double.parseDouble(coords[0]), Double.parseDouble(coords[1]), Double.parseDouble(coords[2]));
-            this.respawnMob(schedule.getType().equals("id") ? mobId : schedule.getMob(), loc);
+            this.respawnMob(mobName, loc);
         }
     }
 
