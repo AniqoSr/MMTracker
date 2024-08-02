@@ -75,7 +75,12 @@ public class MMTrackerPlaceholder extends PlaceholderExpansion {
     }
 
     private String getTopName(String identifier, int rank) {
-        String path = "id." + identifier + ".totaldamage.players." + rank;
+        String path;
+        if (yamlConfig.contains("id." + identifier)) {
+            path = "id." + identifier + ".totaldamage.players." + rank;
+        } else {
+            path = "id." + findMobId(identifier) + ".mobs." + identifier + ".players." + rank;
+        }
         String name = this.yamlConfig.getString(path + ".Name", "None");
         if (this.debug) {
             this.plugin.getLogger().info("Fetching top name for " + identifier + " rank " + rank + ": " + name);
@@ -84,11 +89,25 @@ public class MMTrackerPlaceholder extends PlaceholderExpansion {
     }
 
     private String getTopDamage(String identifier, int rank) {
-        String path = "id." + identifier + ".totaldamage.players." + rank;
+        String path;
+        if (yamlConfig.contains("id." + identifier)) {
+            path = "id." + identifier + ".totaldamage.players." + rank;
+        } else {
+            path = "id." + findMobId(identifier) + ".mobs." + identifier + ".players." + rank;
+        }
         int damage = this.yamlConfig.getInt(path + ".Damage", 0);
         if (this.debug) {
             this.plugin.getLogger().info("Fetching top damage for " + identifier + " rank " + rank + ": " + damage);
         }
         return String.valueOf(damage);
+    }
+
+    private String findMobId(String mobName) {
+        for (String id : this.yamlConfig.getConfigurationSection("id").getKeys(false)) {
+            if (this.yamlConfig.contains("id." + id + ".mobs." + mobName)) {
+                return id;
+            }
+        }
+        return "None";
     }
 }

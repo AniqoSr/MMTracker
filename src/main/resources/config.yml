@@ -1,54 +1,60 @@
 debug: false
 
-language: 'en' # 'id' for Indonesian, 'en' for English
+language: 'id' # 'id' for Indonesian, 'en' for English
 
 mythicmobs:
   spesifik_mob:
-    - id: 'SkeletonWarrior'
+    SkeletonWarrior:
       nama_mobs:
-        1: 'SkeletonKing'
-        2: 'SkeletonMinion'
+        - 'SkeletonKing'
+        - 'SkeletalMinion'
       maks:
-        1: '1'
-        2: '2'
-    - id: 'SkeletalKnight'
+        - '1'
+        - '2'
+    SkeletalKnight:
       nama_mob:
-        1: 'SkeletalKnight'
+        - 'SkeletalKnight'
       mak:
-        1: false
-    - id: 'Zombies'
+        - '1'
+    Zombies:
       nama_mobs:
-        1: 'HUSK'
-        2: 'Zombie'
+        - 'HUSK'
+        - 'Zombie'
       maks:
-        1: false
-        2: '3'
+        - '-1'
+        - '3'
 
 jadwal-reset:
   reset1:
-    enabled: true
-    id: 'SkeletonWarrior'
-    hari: 'senin'
-    waktu: '00:00'
-    s-m-h: 'false'
-    interval: 'mingguan'
-    respawn: 'true'
-    loc: 'world:100,64,100'
+    enabled: false
+    type: 'id'
+    resource:
+      id: 'SkeletonWarrior'
+      hari: 'senin'
+      waktu: '00:00'
+      s-m-h: '-1'
+      interval: 'mingguan'
+      respawn: 'true'
+      loc: 'world:100,64,100'
   reset2:
     enabled: true
-    id: 'SkeletalKnight'
-    hari: 'false'
-    waktu: 'false'
-    s-m-h: '500s'
-    interval: 'detik'
-    respawn: 'true'
-    loc: 'world:100,64,100'
+    type: 'mob'
+    resource:
+      mob: 'SkeletalKnight'
+      hari: '-1'
+      waktu: '-1'
+      s-m-h: '500s'
+      interval: 'detik'
+      respawn: 'true'
+      loc: 'world:100,64,100'
   reset3:
-    enabled: true
-    id: 'Zombies'
-    hari: 'minggu'
-    waktu: '23:59'
-    s-m-h: 'false'
-    interval: 'bulanan'
-    respawn: 'false'
-    loc: 'none'
+    enabled: false
+    type: 'id'
+    resource:
+      id: 'Zombies'
+      hari: 'minggu'
+      waktu: '23:59'
+      s-m-h: '-1'
+      interval: 'bulanan'
+      respawn: 'false'
+      loc: 'none'
