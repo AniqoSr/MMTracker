@@ -1,6 +1,6 @@
 PlaceholderAPI Top Damage:
-%mmtrack__topname__(id)__(rank)% multi-mob case
+%mmtrack_topname_(id)_(rank)% multi-mob case
 
 
 
-or %mmtrack__topname__(mobname)__(rank)% for single-mob case
+or %mmtrack_topname_(mobname)_(rank)% for single-mob case
